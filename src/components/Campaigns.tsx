@@ -34,28 +34,6 @@ export function Campaigns() {
     }
   }, [user]);
 
-  const handleWebhookTrigger = async (campaign: Campaign, file: File) => {
-    if (!user || !file) return;
-
-    const formData = new FormData();
-    formData.append("user_id", user.id);
-    formData.append("campaign", JSON.stringify(campaign));
-    formData.append("csv", file);
-
-    try {
-      const res = await fetch("https://mazirhx.app.n8n.cloud/webhook/start-campaign-upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("Webhook failed");
-      alert("CSV uploaded successfully!");
-    } catch (err) {
-      console.error(err);
-      alert("Upload failed.");
-    }
-  };
-
   const fetchCampaigns = async () => {
     if (!user) return;
 
@@ -80,10 +58,10 @@ export function Campaigns() {
     if (!user) return;
 
     try {
-      const { error } = await supabase.from('campaigns').insert({
+      const { data, error } = await supabase.from('campaigns').insert({
         user_id: user.id,
         ...formData,
-      });
+      }).select().single();
 
       if (error) throw error;
 
@@ -95,8 +73,9 @@ export function Campaigns() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
+            campaign_id: data.id,
             user_id: user.id,
-            campaign: formData,
+            campaign_data: data,
           }),
         });
       } catch (webhookError) {
@@ -197,7 +176,7 @@ export function Campaigns() {
   };
 
   const handleDeleteCampaign = async (campaignId: string) => {
-    if (!confirm("Are you sure you want to delete this campaign?")) return;
+    if (!confirm('Are you sure you want to delete this campaign?')) return;
 
     try {
       const { error } = await supabase
@@ -364,7 +343,7 @@ export function Campaigns() {
             <div className="flex justify-between gap-2">
               <button
                 className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors"
-                onClick={() => window.location.href = `/campaigns/${campaign.id}/chat`}
+                onClick={() => window.location.href = `/campaigns/${campaign.id}/edit`}
               >
                 Edit
               </button>
@@ -379,6 +358,7 @@ export function Campaigns() {
         ))}
       </div>
 
+      {/* Empty State */}
       {campaigns.length === 0 && (
         <div className="text-center py-12">
           <Target className="h-16 w-16 text-gray-400 mx-auto mb-4" />
