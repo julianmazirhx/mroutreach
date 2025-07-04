@@ -34,8 +34,6 @@ export function Campaigns() {
     }
   }, [user]);
 
-  
-
   const handleWebhookTrigger = async (campaign: Campaign, file: File) => {
     if (!user || !file) return;
 
@@ -57,7 +55,6 @@ export function Campaigns() {
       alert("Upload failed.");
     }
   };
-
 
   const fetchCampaigns = async () => {
     if (!user) return;
@@ -89,6 +86,22 @@ export function Campaigns() {
       });
 
       if (error) throw error;
+
+      // Trigger webhook on campaign creation
+      try {
+        await fetch('https://mazirhx.app.n8n.cloud/webhook/campaign-created', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            campaign: formData,
+          }),
+        });
+      } catch (webhookError) {
+        console.error('Error triggering webhook:', webhookError);
+      }
 
       setFormData({ offer: '', calendar_url: '', goal: '', status: 'draft' });
       setShowCreateForm(false);
@@ -180,6 +193,22 @@ export function Campaigns() {
       alert('Error uploading leads. Please check your CSV format.');
     } finally {
       setUploadLoading(false);
+    }
+  };
+
+  const handleDeleteCampaign = async (campaignId: string) => {
+    if (!confirm("Are you sure you want to delete this campaign?")) return;
+
+    try {
+      const { error } = await supabase
+        .from('campaigns')
+        .delete()
+        .eq('id', campaignId);
+
+      if (error) throw error;
+      fetchCampaigns();
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
     }
   };
 
@@ -319,7 +348,7 @@ export function Campaigns() {
               </div>
             )}
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <span className="text-xs text-gray-500">
                 {new Date(campaign.created_at).toLocaleDateString()}
               </span>
@@ -328,56 +357,24 @@ export function Campaigns() {
                 className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-600 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors"
               >
                 <Upload className="h-4 w-4 mr-1" />
-
-              <div className="flex justify-between mt-4 gap-2">
-                <a
-                  href={`/campaigns/${c.id}/edit`}
-                  className="text-sm text-white bg-blue-500 px-3 py-1 rounded hover:bg-blue-600"
-                >
-                  Edit
-                </a>
-                <button
-                  onClick={() => handleDelete(c.id)}
-                  className="text-sm text-white bg-red-500 px-3 py-1 rounded hover:bg-red-600"
-                >
-                  Delete
-                </button>
-              </div>
+                Upload
               </button>
-            
-              <div className="flex gap-2 mt-4">
-                <button
-                  className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
-                  onClick={() => setShowUploadModal(c.id)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="bg-red-500 text-white px-2 py-1 rounded text-sm"
-                  onClick={async () => {
-                    if (confirm("Are you sure?")) {
-                      await supabase.from("campaigns").delete().eq("id", c.id);
-                      fetchCampaigns();
-                    }
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
+            </div>
 
-              {showUploadModal === c.id && (
-                <div className="mt-4">
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={(e) =>
-                      e.target.files?.[0] &&
-                      handleWebhookTrigger(c, e.target.files[0])
-                    }
-                  />
-                </div>
-              )}
-
+            <div className="flex justify-between gap-2">
+              <button
+                className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors"
+                onClick={() => window.location.href = `/campaigns/${campaign.id}/chat`}
+              >
+                Edit
+              </button>
+              <button
+                className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
+                onClick={() => handleDeleteCampaign(campaign.id)}
+              >
+                Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>
