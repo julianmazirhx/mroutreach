@@ -78,81 +78,34 @@ export function Campaigns() {
 
     setUploadLoading(true);
     try {
-      const text = await csvFile.text();
-      const lines = text.split('\n');
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-      
-      const leads = lines.slice(1)
-        .filter(line => line.trim())
-        .map(line => {
-          const values = line.split(',').map(v => v.trim());
-          const lead: any = {
-            user_id: user.id,
-            campaign_id: campaignId,
-            status: 'pending',
-          };
+      // Get the campaign data
+      const campaign = campaigns.find(c => c.id === campaignId);
+      if (!campaign) {
+        throw new Error('Campaign not found');
+      }
 
-          headers.forEach((header, index) => {
-            if (values[index]) {
-              switch (header) {
-                case 'name':
-                  lead.name = values[index];
-                  break;
-                case 'phone':
-                  lead.phone = values[index];
-                  break;
-                case 'email':
-                  lead.email = values[index];
-                  break;
-                case 'company_name':
-                  lead.company_name = values[index];
-                  break;
-                case 'job_title':
-                  lead.job_title = values[index];
-                  break;
-                case 'source_url':
-                  lead.source_url = values[index];
-                  break;
-                case 'source_platform':
-                  lead.source_platform = values[index];
-                  break;
-              }
-            }
-          });
+      // Create FormData to send CSV file with campaign data and user ID
+      const formData = new FormData();
+      formData.append('user_id', user.id);
+      formData.append('campaign', JSON.stringify(campaign));
+      formData.append('csv', csvFile);
 
-          return lead;
-        });
+      // Send directly to webhook
+      const response = await fetch('https://mazirhx.app.n8n.cloud/webhook/start-campaign-upload', {
+        method: 'POST',
+        body: formData,
+      });
 
-      // Insert leads
-      const { error } = await supabase
-        .from('uploaded_leads')
-        .insert(leads);
-
-      if (error) throw error;
-
-      // Trigger webhook ONLY after CSV upload
-      try {
-        await fetch('https://mazirhx.app.n8n.cloud/webhook/start-campaign-upload', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            campaign_id: campaignId,
-            user_id: user.id,
-            leads_count: leads.length,
-          }),
-        });
-      } catch (webhookError) {
-        console.error('Error triggering webhook:', webhookError);
+      if (!response.ok) {
+        throw new Error('Webhook request failed');
       }
 
       setCsvFile(null);
       setShowUploadModal(null);
-      alert('Leads uploaded successfully!');
+      alert('CSV uploaded successfully and webhook triggered!');
     } catch (error) {
-      console.error('Error uploading leads:', error);
-      alert('Error uploading leads. Please check your CSV format.');
+      console.error('Error uploading CSV:', error);
+      alert('Error uploading CSV. Please try again.');
     } finally {
       setUploadLoading(false);
     }
