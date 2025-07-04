@@ -58,29 +58,12 @@ export function Campaigns() {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase.from('campaigns').insert({
+      const { error } = await supabase.from('campaigns').insert({
         user_id: user.id,
         ...formData,
-      }).select().single();
+      });
 
       if (error) throw error;
-
-      // Trigger webhook on campaign creation
-      try {
-        await fetch('https://mazirhx.app.n8n.cloud/webhook/campaign-created', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            campaign_id: data.id,
-            user_id: user.id,
-            campaign_data: data,
-          }),
-        });
-      } catch (webhookError) {
-        console.error('Error triggering webhook:', webhookError);
-      }
 
       setFormData({ offer: '', calendar_url: '', goal: '', status: 'draft' });
       setShowCreateForm(false);
@@ -147,7 +130,7 @@ export function Campaigns() {
 
       if (error) throw error;
 
-      // Trigger n8n webhook
+      // Trigger webhook ONLY after CSV upload
       try {
         await fetch('https://mazirhx.app.n8n.cloud/webhook/start-campaign-upload', {
           method: 'POST',
