@@ -22,7 +22,8 @@ function App() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="campaigns" element={<Campaigns />} />
-                <Route path="campaigns/:id/chat" element={<SequenceEditorChat />} />
+              <Route path="campaigns/:id/edit" element={<EditCampaign />} />
+              <Route path="campaigns/:id/chat" element={<SequenceEditorChat />} />
               <Route path="leads" element={<LeadsTracker />} />
               <Route path="booked" element={<BookedLeads />} />
               <Route path="admin" element={<AdminPanel />} />
