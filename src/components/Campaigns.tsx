@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Plus, Upload, Target, Calendar, Edit2, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface Campaign {
   id: string;
@@ -272,22 +273,25 @@ export function Campaigns() {
                 className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-600 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors"
               >
                 <Upload className="h-4 w-4 mr-1" />
-                Upload
+                Upload CSV
               </button>
             </div>
 
-            <div className="flex justify-between gap-2">
-              <button
-                className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors"
-                onClick={() => window.location.href = `/campaigns/${campaign.id}/edit`}
+            {/* Action buttons with icons */}
+            <div className="flex justify-end gap-2">
+              <Link
+                to={`/campaigns/${campaign.id}/edit`}
+                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                title="Edit campaign"
               >
-                Edit
-              </button>
+                <Edit2 className="h-4 w-4" />
+              </Link>
               <button
-                className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
                 onClick={() => handleDeleteCampaign(campaign.id)}
+                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Delete campaign"
               >
-                Delete
+                <Trash2 className="h-4 w-4" />
               </button>
             </div>
           </div>
